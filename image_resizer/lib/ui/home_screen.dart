@@ -109,24 +109,9 @@ class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
 
       return img;
     } else if (snapshot.hasError) {
-      return Padding(padding: EdgeInsets.all(16), child: Text(snapshot.error.toString()),);
+      return Padding(padding: EdgeInsets.all(16), child: Text(snapshot.error.toString()));
     }
 
     return Container();
   }
 }
-
-/*Center(
-              child: new FutureBuilder<ui.Image>(
-                future: _bloc.getImage(),
-                builder: (BuildContext context, AsyncSnapshot<ui.Image> snapshot) {
-                  if (snapshot.hasData) {
-                    ui.Image image = snapshot.data;
-
-                    return new Text('${image.width}x${image.height}', style: Theme.of(context).textTheme.display1);
-                  } else {
-                    return new Text('Loading...');
-                  }
-                },
-              ),
-            ),*/
