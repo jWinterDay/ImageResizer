@@ -7,7 +7,7 @@ Project using: rxDart, BLoC pattern, https://app.quicktype.io/#l=dart for quick 
 ![Screenshot](test.gif)
 
 example original image: 1920*1920 px
-![Screenshot](raketa-original.jpg)
+![Screenshot](raketa-original.jpeg)
 
 double ratioX = 1200 / 1920 = 0.625;
 double ratioY = 1200 / 1920 = 0.625
