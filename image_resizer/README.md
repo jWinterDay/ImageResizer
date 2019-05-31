@@ -1,16 +1,25 @@
 # image_resizer
 
-A new Flutter project.
+A simple Flutter project for demonstrate image resizing. Formats - original, 16/9, 4/3
 
-## Getting Started
+Project using: rxDart, BLoC pattern, https://app.quicktype.io/#l=dart for quick generating models, ui Canvas for changing ratio
 
-This project is a starting point for a Flutter application.
+![Screenshot](test.gif)
 
-A few resources to get you started if this is your first Flutter project:
+example original image: 1920*1920 px
+![Screenshot](raketa-original.jpg)
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+double ratioX = 1200 / 1920 = 0.625;
+double ratioY = 1200 / 1920 = 0.625
+double ratio = math.min(0.625, 0.625) = 0.625;
 
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.dev/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+nextWidth = 1920 * 0.625 = 1200;
+nextHeight = 1920 * 0.625 = 1200;
+![Screenshot](raketa-formatted.jpg)
+
+formattedWidth = 1200
+formattedHeight = 1200*9/16 = 675
+
+offsetX = 0
+offsetY = (1200 - 675)/2 = 262.5
+![Screenshot](raketa-formatted-169.jpg)
