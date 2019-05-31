@@ -8,9 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:math' as math;
 
-
 class HomeBloc {
-  static const IMG_ARR = ['assets/img/raketa.jpeg', 'assets/img/Olsen.jpg', 'assets/img/nature.jpg', ];
+  static const IMG_ARR = [
+    'assets/img/raketa.jpeg',
+    'assets/img/Olsen.jpg',
+    'assets/img/nature.jpg',
+  ];
   static const IMG_MAX_WIDTH_PX = 1200;
   static const IMG_MAX_HEIGHT_PX = 1200;
 
@@ -26,40 +29,39 @@ class HomeBloc {
   Observable<LoadResult> get resultStream => _lastValObservable;
   //LoadResult getInitData() => new LoadResult(imageFormat: CustomImageFormat.IF_16_TO_9, error: null, image: null, isLoading: false);//null;
 
-  loadImage() { _imageController.sink.add(null); }
-  changeSettings(int imageFormat) { _settingsController.sink.add(imageFormat); }
+  loadImage() {
+    _imageController.sink.add(null);
+  }
+
+  changeSettings(int imageFormat) {
+    _settingsController.sink.add(imageFormat);
+  }
 
   //constructor
   HomeBloc() {
     //settings stream
-     Observable<LoadResult> settingsStream = _settingsController
-     .switchMap((p) { return _loadAsync(p, isNextImage: false); })
-      .doOnData((d) {
-        //print('[SETTINGS] data = $d');
-      });
+    Observable<LoadResult> settingsStream = _settingsController.switchMap((p) {
+      return _loadAsync(p, isNextImage: false);
+    }).doOnData((d) {
+      //print('[SETTINGS] data = $d');
+    });
 
     //image stream
-    Observable<LoadResult> imageStream = _imageController
-      .switchMap((p) {
-        return _loadAsync(null, isNextImage: true);
-      })
-      .doOnData((d) {
-        //print('[AFTER LOAD] data = $d');
-      });
+    Observable<LoadResult> imageStream = _imageController.switchMap((p) {
+      return _loadAsync(null, isNextImage: true);
+    }).doOnData((d) {
+      //print('[AFTER LOAD] data = $d');
+    });
 
     //merged
-    Observable<Observable<LoadResult>> streams = Observable.merge([settingsStream, imageStream])
-      .doOnData((data) {
-        //print('[MERGED] data = $data');
-      })
-      .map((p) => Observable.just(p));
+    Observable<Observable<LoadResult>> streams =
+        Observable.merge([settingsStream, imageStream]).doOnData((data) {
+      //print('[MERGED] data = $data');
+    }).map((p) => Observable.just(p));
 
-    _lastValObservable = Observable
-      .switchLatest(streams)
-      .doOnData((data) {
-        //print('[SWITCH LATEST] data = $data');
-      })
-      .publishValue();
+    _lastValObservable = Observable.switchLatest(streams).doOnData((data) {
+      //print('[SWITCH LATEST] data = $data');
+    }).publishValue();
 
     _lastValObservable.connect();
   }
@@ -81,7 +83,7 @@ class HomeBloc {
     final LoadResult lastVal = _lastValObservable.value;
 
     LoadResult nextVal = lastVal ?? new LoadResult.init();
-    int nextImageFormat = imageFormat??nextVal.imageFormat;
+    int nextImageFormat = imageFormat ?? nextVal.imageFormat;
 
     //
     if (lastVal?.image == null && !isNextImage) {
@@ -97,18 +99,20 @@ class HomeBloc {
 
       if (nextImageFormat == CustomImageFormat.IF_ORIG) {
         var imageWidget = await _uiImageToWidget(uiImage);
-        yield new LoadResult.completed(imageWidget, imageFormat: nextImageFormat);
+        yield new LoadResult.completed(imageWidget,
+            imageFormat: nextImageFormat);
         return;
       }
-    } catch(ex) {
+    } catch (ex) {
       yield new LoadResult.error(ex, imageFormat: nextImageFormat);
       return;
     }
-    
-    if (uiImage.width > IMG_MAX_WIDTH_PX || uiImage.height > IMG_MAX_HEIGHT_PX) {
+
+    if (uiImage.width > IMG_MAX_WIDTH_PX ||
+        uiImage.height > IMG_MAX_HEIGHT_PX) {
       try {
         uiImage = await _reformatUiImage(uiImage, nextImageFormat);
-      } catch(ex) {
+      } catch (ex) {
         yield new LoadResult.error(ex, imageFormat: nextImageFormat);
         return;
       }
@@ -134,7 +138,8 @@ class HomeBloc {
     return fi.image;
   }
 
-  Future<ui.Image> _reformatUiImage(ui.Image uiImage, int imageFormatIndex) async {
+  Future<ui.Image> _reformatUiImage(
+      ui.Image uiImage, int imageFormatIndex) async {
     double origWidth = uiImage.width.toDouble();
     double origHeight = uiImage.height.toDouble();
 
@@ -154,10 +159,12 @@ class HomeBloc {
     }
 
     ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
-    Canvas canvas = Canvas(pictureRecorder, Rect.fromPoints(Offset(0.0, 0.0), Offset(formattedWidth, origHeight)));
+    Canvas canvas = Canvas(pictureRecorder,
+        Rect.fromPoints(Offset(0.0, 0.0), Offset(formattedWidth, origHeight)));
     Paint paint = Paint();
 
-    Rect src = Rect.fromLTWH(0.0, (origHeight - formattedHeight)/2, formattedWidth, formattedHeight);
+    Rect src = Rect.fromLTWH(0.0, (origHeight - formattedHeight) / 2,
+        formattedWidth, formattedHeight);
     Rect dst = Rect.fromLTWH(0.0, 0.0, nextWidth, nextHeight);
     canvas.drawImageRect(uiImage, src, dst, paint);
 
@@ -173,4 +180,4 @@ class HomeBloc {
     if (_imageController != null) await _imageController.close();
     if (_settingsController != null) await _settingsController.close();
   }
-}  
+}

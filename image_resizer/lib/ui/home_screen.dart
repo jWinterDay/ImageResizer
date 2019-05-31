@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:image_resizer/blocs/home_bloc.dart';
 import 'package:image_resizer/models/CustomImageFormat.dart';
 import 'package:image_resizer/models/LoadResult.dart';
-//import 'dart:ui' as ui;
-
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -13,11 +11,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
   HomeBloc _bloc = new HomeBloc();
 
-  //constructor
-  _HomeState() {
-    //_bloc.loadImage();
-  }
-
   @override
   void dispose() {
     _bloc.dispose();
@@ -26,54 +19,46 @@ class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    //double deviceWidth = MediaQuery.of(context).size.width;
-    //double deviceHeight = MediaQuery.of(context).size.height;
-    //print('deviceWidth = $deviceWidth, deviceHeight = $deviceHeight');
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Home',
+        appBar: AppBar(
+          title: Text(
+            'Home',
+          ),
         ),
-      ),
-      body: 
-        SingleChildScrollView(
-          padding: EdgeInsets.all(2),
-          child:
-          StreamBuilder(
-            //initialData: _bloc.getInitData(),
-            stream: _bloc.resultStream,//mergedStream,
-            builder: (context, AsyncSnapshot<LoadResult> snapshot) {
-              //print('snapshot = $snapshot');
+        body: SingleChildScrollView(
+            padding: EdgeInsets.all(2),
+            child: StreamBuilder(
+              //initialData: _bloc.getInitData(),
+              stream: _bloc.resultStream, //mergedStream,
+              builder: (context, AsyncSnapshot<LoadResult> snapshot) {
+                //print('snapshot = $snapshot');
 
-              return Column(
-                children: <Widget>[
-                  _buildSettings(snapshot),
-                  _buildBtn(snapshot),
-                  _buildImage(snapshot),
+                return Column(
+                  children: <Widget>[
+                    _buildSettings(snapshot),
+                    _buildBtn(snapshot),
+                    _buildImage(snapshot),
 
-                  //test frezing animation
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Just to test animation freezing',
-                      contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-                      prefixIcon:  Icon(Icons.search),
-                      hintStyle: TextStyle(fontStyle: FontStyle.italic),
+                    //test frezing animation
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Just to test animation freezing',
+                        contentPadding:
+                            EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+                        prefixIcon: Icon(Icons.search),
+                        hintStyle: TextStyle(fontStyle: FontStyle.italic),
+                      ),
                     ),
-                  ),
-                  FlatButton.icon(
-                    label: Text('Just to test animation freezing'),
-                    icon: Icon(Icons.image),
-                    onPressed: () {
-                      print('simple click');
-                    }
-                  )
-                ],
-              );
-            },
-          )
-      )
-    );
+                    FlatButton.icon(
+                        label: Text('Just to test animation freezing'),
+                        icon: Icon(Icons.image),
+                        onPressed: () {
+                          print('simple click');
+                        })
+                  ],
+                );
+              },
+            )));
   }
 
   _formatChanged(val) {
@@ -86,7 +71,9 @@ class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
 
     bool isLoading = snapshot.hasData && snapshot.data.isLoading;
     var cb = isLoading ? null : _formatChanged;
-    var groupValue = (snapshot.hasData) ? snapshot.data.imageFormat : CustomImageFormat.IF_16_TO_9;
+    var groupValue = (snapshot.hasData)
+        ? snapshot.data.imageFormat
+        : CustomImageFormat.IF_16_TO_9;
 
     return Row(
       children: <Widget>[
@@ -117,7 +104,7 @@ class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
 
     bool isDisabled = snapshot.hasData && state.isLoading;
     var imgColor = isDisabled ? Colors.red.value : Colors.green.value;
-    
+
     return FlatButton.icon(
       label: Text('Show next image'),
       icon: Icon(Icons.image, color: Color(imgColor)),
@@ -136,16 +123,20 @@ class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
       Image img = state.image;
 
       if (state.error != null) {
-        return Text('[EXCEPTION] ${state.error.toString()}', style: TextStyle(color: Colors.red),);
+        return Text(
+          '[EXCEPTION] ${state.error.toString()}',
+          style: TextStyle(color: Colors.red),
+        );
       }
 
       if (img == null) {
-        return Container();//Text('There are errors to load image...');
+        return Container();
       }
 
       return img;
     } else if (snapshot.hasError) {
-      return Padding(padding: EdgeInsets.all(16), child: Text(snapshot.error.toString()));
+      return Padding(
+          padding: EdgeInsets.all(16), child: Text(snapshot.error.toString()));
     }
 
     return Container();
