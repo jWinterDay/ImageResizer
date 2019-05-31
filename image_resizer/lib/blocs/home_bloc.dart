@@ -1,4 +1,6 @@
+import 'package:image_resizer/models/CustomImageFormat.dart';
 import 'package:image_resizer/models/LoadResult.dart';
+
 import 'package:rxdart/rxdart.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
@@ -8,36 +10,63 @@ import 'dart:math' as math;
 
 
 class HomeBloc {
-  static const IMG_ARR = ['assets/img/sabaton.jpg', 'assets/img/Olsen.jpg', 'assets/img/raketa.jpeg'];
-  //static const IMG_PATH = 'assets/img/sabaton.jpg';
-  //static const IMG_PATH = 'assets/img/Olsen.jpg';
-  static const IMG_PATH = 'assets/img/raketa.jpeg';
+  static const IMG_ARR = ['assets/img/raketa.jpeg', 'assets/img/Olsen.jpg', 'assets/img/nature.jpg', ];
   static const IMG_MAX_WIDTH_PX = 1200;
-  static const IMG_FORMAT_RATIO = 16/9;
   static const IMG_MAX_HEIGHT_PX = 1200;
 
   int _currentImgIndex = 0;
 
+  //possible better to change int to some settings class...
+  PublishSubject<int> _settingsController = PublishSubject();
+  Subject<LoadResult> _imageController = new PublishSubject();
 
-  PublishSubject<LoadResult> _imageController = new PublishSubject();
+  ValueConnectableObservable<LoadResult> _lastValObservable;
 
   //public
-  Observable<LoadResult> imageStream;// => _imageController.stream;
-  LoadResult getInitData() => null;
+  Observable<LoadResult> get resultStream => _lastValObservable;
+  //LoadResult getInitData() => new LoadResult(imageFormat: CustomImageFormat.IF_16_TO_9, error: null, image: null, isLoading: false);//null;
+
   loadImage() { _imageController.sink.add(null); }
+  changeSettings(int imageFormat) { _settingsController.sink.add(imageFormat); }
 
   //constructor
   HomeBloc() {
-    imageStream = _imageController
+    //settings stream
+     Observable<LoadResult> settingsStream = _settingsController
+     .switchMap((p) { return _loadAsync(p, isNextImage: false); })
+      .doOnData((d) {
+        //print('[SETTINGS] data = $d');
+      });
+
+    //image stream
+    Observable<LoadResult> imageStream = _imageController
       .switchMap((p) {
-        return _loadAsync(true);
+        return _loadAsync(null, isNextImage: true);
       })
       .doOnData((d) {
         //print('[AFTER LOAD] data = $d');
       });
+
+    //merged
+    Observable<Observable<LoadResult>> streams = Observable.merge([settingsStream, imageStream])
+      .doOnData((data) {
+        //print('[MERGED] data = $data');
+      })
+      .map((p) => Observable.just(p));
+
+    _lastValObservable = Observable
+      .switchLatest(streams)
+      .doOnData((data) {
+        //print('[SWITCH LATEST] data = $data');
+      })
+      .publishValue();
+
+    _lastValObservable.connect();
   }
 
-  String _getNextImgPath() {
+  String _getNextImgPath(bool isGenerate) {
+    if (!isGenerate) return IMG_ARR[_currentImgIndex];
+
     if (_currentImgIndex >= IMG_ARR.length - 1) {
       _currentImgIndex = 0;
     } else {
@@ -47,34 +76,55 @@ class HomeBloc {
     return IMG_ARR[_currentImgIndex];
   }
 
-  Stream<LoadResult> _loadAsync(bool isInit) async* {
-    yield new LoadResult.loading();
+  //main common calc func
+  Stream<LoadResult> _loadAsync(int imageFormat, {bool isNextImage}) async* {
+    final LoadResult lastVal = _lastValObservable.value;
 
-    //await Future.delayed(Duration(seconds: 5));
+    LoadResult nextVal = lastVal ?? new LoadResult.init();
+    int nextImageFormat = imageFormat??nextVal.imageFormat;
+
+    //
+    if (lastVal?.image == null && !isNextImage) {
+      yield nextVal.copyWith(imageFormat: nextImageFormat);
+      return;
+    }
+
+    yield new LoadResult.loading();
 
     ui.Image uiImage;
     try {
-      uiImage = await _loadFromSource(_getNextImgPath());//IMG_PATH);
+      uiImage = await _loadFromSource(_getNextImgPath(isNextImage));
+
+      if (nextImageFormat == CustomImageFormat.IF_ORIG) {
+        var imageWidget = await _uiImageToWidget(uiImage);
+        yield new LoadResult.completed(imageWidget, imageFormat: nextImageFormat);
+        return;
+      }
     } catch(ex) {
-      yield new LoadResult.error(ex);
+      yield new LoadResult.error(ex, imageFormat: nextImageFormat);
       return;
     }
     
     if (uiImage.width > IMG_MAX_WIDTH_PX || uiImage.height > IMG_MAX_HEIGHT_PX) {
       try {
-        uiImage = await _reformatUiImage(uiImage);
+        uiImage = await _reformatUiImage(uiImage, nextImageFormat);
       } catch(ex) {
-        yield new LoadResult.error(ex);
+        yield new LoadResult.error(ex, imageFormat: nextImageFormat);
         return;
       }
     }
 
     //convert to Image widget
+    var imageWidget = await _uiImageToWidget(uiImage);
+    yield new LoadResult.completed(imageWidget, imageFormat: nextImageFormat);
+  }
+
+  Future<Image> _uiImageToWidget(ui.Image uiImage) async {
     var byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
     var buffer = byteData.buffer.asUint8List();
     var imgWidget = new Image.memory(buffer);
 
-    yield new LoadResult.completed(imgWidget);
+    return imgWidget;
   }
 
   Future<ui.Image> _loadFromSource(String asset) async {
@@ -84,12 +134,13 @@ class HomeBloc {
     return fi.image;
   }
 
-  Future<ui.Image> _reformatUiImage(ui.Image uiImage) async {
+  Future<ui.Image> _reformatUiImage(ui.Image uiImage, int imageFormatIndex) async {
     double origWidth = uiImage.width.toDouble();
     double origHeight = uiImage.height.toDouble();
 
+    double imageFormat = CustomImageFormat.formatsValues[imageFormatIndex];
     double formattedWidth = origWidth;
-    double formattedHeight = origWidth / IMG_FORMAT_RATIO;
+    double formattedHeight = origWidth / imageFormat;
 
     double nextWidth = formattedWidth;
     double nextHeight = formattedHeight;
@@ -119,6 +170,7 @@ class HomeBloc {
   }
 
   dispose() async {
-    await _imageController.close();
+    if (_imageController != null) await _imageController.close();
+    if (_settingsController != null) await _settingsController.close();
   }
 }  

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_resizer/blocs/home_bloc.dart';
+import 'package:image_resizer/models/CustomImageFormat.dart';
 import 'package:image_resizer/models/LoadResult.dart';
 //import 'dart:ui' as ui;
 
@@ -14,15 +15,13 @@ class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
 
   //constructor
   _HomeState() {
-    //_bloc.loadFirst();
+    //_bloc.loadImage();
   }
 
   @override
   void dispose() {
     _bloc.dispose();
     super.dispose();
-    //gUserBloc.dispose();
-    //GlobalSettings.
   }
 
   @override
@@ -42,13 +41,14 @@ class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
           padding: EdgeInsets.all(2),
           child:
           StreamBuilder(
-            initialData: _bloc.getInitData(),
-            stream: _bloc.imageStream,
+            //initialData: _bloc.getInitData(),
+            stream: _bloc.resultStream,//mergedStream,
             builder: (context, AsyncSnapshot<LoadResult> snapshot) {
               //print('snapshot = $snapshot');
 
               return Column(
                 children: <Widget>[
+                  _buildSettings(snapshot),
                   _buildBtn(snapshot),
                   _buildImage(snapshot),
 
@@ -76,6 +76,42 @@ class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  _formatChanged(val) {
+    print(val);
+    _bloc.changeSettings(val);
+  }
+
+  Widget _buildSettings(AsyncSnapshot<LoadResult> snapshot) {
+    //LoadResult data = snapshot.data;
+
+    bool isLoading = snapshot.hasData && snapshot.data.isLoading;
+    var cb = isLoading ? null : _formatChanged;
+    var groupValue = (snapshot.hasData) ? snapshot.data.imageFormat : CustomImageFormat.IF_16_TO_9;
+
+    return Row(
+      children: <Widget>[
+        Radio(
+          value: CustomImageFormat.IF_ORIG,
+          groupValue: groupValue,
+          onChanged: cb,
+        ),
+        Text('Original'),
+        Radio(
+          value: CustomImageFormat.IF_16_TO_9,
+          groupValue: groupValue,
+          onChanged: cb,
+        ),
+        Text('16/9'),
+        Radio(
+          value: CustomImageFormat.IF_4_TO_3,
+          groupValue: groupValue,
+          onChanged: cb,
+        ),
+        Text('4/3'),
+      ],
+    );
+  }
+
   Widget _buildBtn(AsyncSnapshot<LoadResult> snapshot) {
     LoadResult state = snapshot.data;
 
@@ -83,7 +119,7 @@ class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
     var imgColor = isDisabled ? Colors.red.value : Colors.green.value;
     
     return FlatButton.icon(
-      label: Text('Load image'),
+      label: Text('Show next image'),
       icon: Icon(Icons.image, color: Color(imgColor)),
       onPressed: isDisabled ? null : _bloc.loadImage,
     );
@@ -104,7 +140,7 @@ class _HomeState extends State<HomeScreen> with WidgetsBindingObserver {
       }
 
       if (img == null) {
-        return Text('There are errors to load image...');
+        return Container();//Text('There are errors to load image...');
       }
 
       return img;
